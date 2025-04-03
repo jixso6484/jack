@@ -1,133 +1,77 @@
-<script>
-    let opened = false;
-  
-    const openLetter = () => {
-      opened = true;
-    };
-  
-    const letterContent = `
-シノへ
+<script lang="ts">
+  import { onMount } from 'svelte';
 
-昨日あった出来事を振り返ると、私たちの間にあったたくさんの話が思い出されます。
-いつも電話でお互いの声を聞き合いながら、近くにいた時間が恋しいです。あの時、
-断固として「だめだ！」と叫びながら別れの挨拶をした記憶もありますが、
-その瞬間にも私はあなたのそばで応援したいという決意をしていました。
+  // src/assets/images 폴더 내의 모든 jpg 파일을 eager 옵션으로 불러옴
+  const images = import.meta.glob('/src/assets/images/*.jpg', { eager: true });
+  const imageList = Object.values(images).map(
+    (mod) => (mod as { default: string }).default
+  );
 
-実は、大学1年生の時、軍隊に入隊する前の私は、
-自分を振り返るとあなたに見せるには足りなかった、
-もしかすると醜い人間だったと告白したいです。
-ピザが好きで、時にはピザの箱をこっそり隠していた姿もありましたが、
-時が経つにつれて少しずつ変わっていったと感じています。
-私たちは皆、変わることができ、変わらなければならないと信じています。
-一言が人の人生を変えることができるように。
+  // 현재 퀴즈 데이터: 이미지의 이름(정답)과 이미지 경로
+  let currentQuiz: { name: string; src: string } | null = null;
+  // 결과 메시지: 정답이 표시되면 값이 채워짐
+  let result = '';
 
-私はいつもあなたの悩みや成長を共に記録し、
-正しい方向へ進めるよう心から応援する人になりたいです。
-お互いが望む未来に向かって進むためには、共に成長する時間が必要だと思います。
-ですから、意図せずに距離を置かないでください。あなたの声、温かい応援が恋しいです。
+  // 랜덤 퀴즈 선택 함수
+  function pickRandomQuiz() {
+    const randomIndex = Math.floor(Math.random() * imageList.length);
+    const src = imageList[randomIndex];
+    // 파일 경로에서 확장자 제외한 파일 이름 추출 (한글 파일명 포함)
+    const nameMatch = src.match(/\/([^\/]+)\.jpg$/);
+    // decodeURIComponent를 사용해 URL 인코딩된 한글을 복원합니다.
+    const name = nameMatch ? decodeURIComponent(nameMatch[1]) : 'Unknown';
+    currentQuiz = { name, src };
+    result = '';
+  }
 
-愛してる。本当に愛してるよ。
+  onMount(() => {
+    pickRandomQuiz();
+  });
 
-  `;
-  </script>
-  
-  <div class="outer-container">
-    {#if !opened}
-      <div class="envelope" on:click={openLetter}>
-        <div class="text-on-envelope">
-          눌러서 열어보세요 ✨
-        </div>
-      </div>
-    {:else}
-      <div class="letter">
-        <pre class="letter-text">{letterContent}</pre>
-        <img class="letter-gif" src="/a.gif" alt="Decorative Gif" />
-      </div>
-    {/if}
+  // 버튼 클릭 핸들러
+  // 정답이 아직 안보이면 정답을 보여주고, 정답이 보이면 다음 퀴즈로 넘어감.
+  function handleButtonClick() {
+    if (!result && currentQuiz) {
+      result = `정답은 ${currentQuiz.name} 입니다.`;
+    } else {
+      pickRandomQuiz();
+    }
+  }
+</script>
+
+<main>
+  <h1>이미지 퀴즈</h1>
+  {#if currentQuiz}
+    <img src={currentQuiz.src} alt="퀴즈 이미지" style="max-width:300px;" />
+  {/if}
+  <div>
+    <button on:click={handleButtonClick}>
+      {#if !result}
+        정답 확인
+      {:else}
+        다음
+      {/if}
+    </button>
   </div>
-  
-  <style>
-    /* Google Fonts에서 Dancing Script 불러오기 */
-    @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;700&display=swap');
-  
-    .outer-container {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(to bottom, #ffd1dc, #f8effd);
-      position: relative;
-      margin: 0;
-      padding: 0;
-    }
-  
-    .envelope {
-      position: relative;
-      cursor: pointer;
-      width: 80%;
-      max-width: 400px;
-      aspect-ratio: 4/3;
-      background: url('/envelope.jpg') no-repeat center center;
-      background-size: contain;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-    }
-    .envelope:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.3);
-    }
-  
-    .text-on-envelope {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #fff;
-      text-shadow: 0 2px 5px rgba(0,0,0,0.6);
-      z-index: 1;
-      /* 여기선 기본 폰트 유지 (필요 시 Dancing Script 적용 가능) */
-    }
-  
-    .letter {
-      width: 80%;
-      max-width: 400px;
-      height: 28rem;
-      background: white;
-      border: 1px solid #eee;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      padding: 2rem;
-      color: #333;
-      overflow: auto;
-      animation: fade-in 0.7s ease-out;
-      background-image: repeating-linear-gradient(
-        to bottom,
-        transparent,
-        transparent 2.2rem,
-        #f0f0f0 2.2rem,
-        #f0f0f0 2.4rem
-      );
-      font-family: 'Dancing Script', cursive;
-      line-height: 1.8;
-    }
-  
-    .letter-text {
-      font-size: 1rem;
-      white-space: pre-wrap;
-    }
-    
-    .letter-gif {
-      display: block;
-      margin: 1rem auto 0 auto;
-      max-width: 100%;
-    }
-  
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
-  
+  {#if result}
+    <p>{result}</p>
+  {/if}
+</main>
+
+<style>
+  main {
+    text-align: center;
+    margin-top: 2rem;
+    font-family: sans-serif;
+  }
+  button {
+    padding: 0.5rem;
+    margin: 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  img {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+</style>
